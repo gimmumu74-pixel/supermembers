@@ -71,6 +71,16 @@ with st.expander("ℹ️ [공식] 매장 안내 및 주의사항", expanded=Fals
 
 # 2) 예약하기 폴더
 with st.expander("📅 예약하기", expanded=False):
+    # 📌 등급별 혜택 안내 추가
+    st.markdown("""
+    #### 📌 슈퍼멤버스 등급별 혜택
+    *   🖤 **블랙** / ❤️ **레드** : 강릉샌드 **2박스** 제공
+    *   💛 **옐로우** : 강릉샌드 **1박스** 제공
+    
+    ※ 방문 전, 상단 **[매장 안내 및 주의사항]**을 꼭 읽어주세요!
+    """)
+    st.write("---")
+
     if full_dates:
         st.error(f"🚨 마감된 예약일: {', '.join(full_dates)}")
 
