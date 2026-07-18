@@ -72,14 +72,14 @@ with tab1:
             flavors = ["커피", "옥수수", "곶감", "흑임자", "딸기", "고구마"]
             flavor_text = f"{st.selectbox('박스 1', flavors)}, {st.selectbox('박스 2', flavors)}" if tier in ["블랙", "레드"] else f"{st.selectbox('박스 1', flavors)}"
             name = st.text_input("성함")
-            phone_input = st.text_input("연락처 (010으로 시작하는 11자리 숫자)")
+            phone_input = st.text_input("연락처 (010-XXXX-XXXX)")
             submit = st.form_submit_button("예약하기")
 
         if submit:
             formatted_phone = validate_and_format_phone(phone_input)
             if not name or not formatted_phone:
                 # 📌 워딩 부드럽게 수정
-                st.warning("⚠️ 연락처 확인 부탁드립니다. (010으로 시작하는 11자리 숫자를 입력해 주세요)")
+                st.warning("⚠️ 연락처 확인 부탁드립니다.")
             else:
                 now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 sheet.append_row([now, date_str, time, name, formatted_phone, tier, flavor_text])
