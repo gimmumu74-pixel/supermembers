@@ -4,27 +4,26 @@ from oauth2client.service_account import ServiceAccountCredentials
 import requests
 from datetime import datetime
 from collections import Counter
-import pandas as pd # 관리자용 표 만들기 기능
+import pandas as pd
+import json
+import os
 
 # ==========================================
-# 1. 환경 설정 (토큰 꼭 다시 넣기!)
+# 1. 환경 설정 (네 토큰 꼭 다시 넣어!)
 # ==========================================
 SHEET_NAME = '슈퍼멤버스' 
 TELEGRAM_TOKEN = '8683541983:AAHNo1XHon2bQGW-dM-QUJx6OwTCepPuGOs'
 CHAT_ID = '8928088522' 
-ADMIN_PASSWORD = '123' # 📌 관리자 비밀번호 (원하는 숫자로 바꿔)
+ADMIN_PASSWORD = '123' 
 
 # ==========================================
-# 2. 구글 시트 연동 (⚡ 속도 엄청 빨라지는 마법의 코드)
+# 2. 구글 시트 연동 (클라우드/로컬 자동 인식)
 # ==========================================
-import json
-import os
-
 @st.cache_data(ttl=30)
 def load_data():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     
-    # 내 컴퓨터에 파일이 있으면 파일을 읽고, 클라우드에서는 서버 금고(st.secrets)를 읽음
+    # 내 컴퓨터에 파일이 있으면 파일을 읽고, 클라우드에서는 서버 금고를 읽음
     if os.path.exists('secrets.json'):
         creds = ServiceAccountCredentials.from_json_keyfile_name('secrets.json', scope)
     else:
@@ -37,8 +36,13 @@ def load_data():
 
 records, sheet = load_data()
 
+# 📌 아까 실수로 지워졌던 날짜 계산 코드가 바로 여기야!
+booked_dates = [str(row.get('방문 날짜', '')) for row in records if row.get('방문 날짜', '') != '']
+date_counts = Counter(booked_dates)
+full_dates = [date for date, count in date_counts.items() if count >= 3]
+
 # ==========================================
-# 3. 메인 화면 & 폼 숨기기 로직
+# 3. 메인 화면 & 예약 폼
 # ==========================================
 st.set_page_config(page_title="강릉샌드 체험단 예약", page_icon="🏖️")
 st.title("🏖️ 강릉샌드 슈퍼멤버스 예약")
@@ -86,7 +90,7 @@ else:
         else:
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             sheet.append_row([now, date_str, time, name, phone, tier, flavor_text])
-            st.cache_data.clear() # 📌 예약 완료되면 기억해둔 캐시 지우고 새로고침
+            st.cache_data.clear() 
             
             message = f"🔔 [체험단 예약]\n- 날짜: {date_str} {time}\n- 등급: {tier}\n- 맛: {flavor_text}\n- 이름: {name}\n- 연락처: {phone}"
             url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
@@ -94,7 +98,7 @@ else:
             st.success("🎉 예약이 완료되었습니다! 매장에서 뵙겠습니다.")
 
 # ==========================================
-# 4. 📱 스마트폰에서 볼 수 있는 관리자 화면 (사이드바)
+# 4. 📱 스마트폰에서 볼 수 있는 관리자 화면
 # ==========================================
 with st.sidebar:
     st.subheader("🕵️ 관리자 전용 메뉴")
@@ -107,7 +111,6 @@ with st.sidebar:
         
         if len(records) > 0:
             df = pd.DataFrame(records)
-            # 엑셀 데이터 중에 딱 필요한 것만 최신순(역순)으로 표 만들기
             show_df = df[['방문 날짜', '방문 시간', '성함', '연락처', '슈퍼멤버스 등급', '선택한 맛']].iloc[::-1]
             st.dataframe(show_df)
         else:
