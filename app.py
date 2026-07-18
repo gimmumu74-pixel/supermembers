@@ -44,14 +44,14 @@ date_counts = Counter(booked_dates)
 full_dates = [date for date, count in date_counts.items() if count >= 3]
 
 # ==========================================
-# 3. 메인 화면
+# 3. 메인 화면 (3단 폴더 구성)
 # ==========================================
 st.set_page_config(page_title="강릉샌드 체험단 예약", page_icon="🏖️")
 st.info(ANNOUNCEMENT)
 st.title("🏖️ 강릉샌드 슈퍼멤버스 예약")
 
-# 📌 상세 정보 (접기/펼치기)
-with st.expander("ℹ️ [공식] 매장 안내 및 주의사항"):
+# 1) 매장 안내 폴더
+with st.expander("ℹ️ [공식] 매장 안내 및 주의사항", expanded=False):
     st.markdown("""
     **⚠️ 유사품 주의**
     쿠키 겉면에 **'강릉샌드'** 글자가 각인되어 있는지 반드시 확인해주세요.
@@ -69,72 +69,68 @@ with st.expander("ℹ️ [공식] 매장 안내 및 주의사항"):
     - 3호점 쿠키랩: 강릉시 남구길30번길 23
     """)
 
-tab1, tab2 = st.tabs(["📅 예약하기", "❌ 예약 취소하기"])
+# 2) 예약하기 폴더
+with st.expander("📅 예약하기", expanded=False):
+    if full_dates:
+        st.error(f"🚨 마감된 예약일: {', '.join(full_dates)}")
 
-# --- 탭 1: 예약하기 (기본 열림) ---
-with tab1:
-    with st.expander("예약하러 가기", expanded=True):
-        if full_dates:
-            st.error(f"🚨 마감된 예약일: {', '.join(full_dates)}")
+    kst_now = datetime.utcnow() + timedelta(hours=9)
+    today = kst_now.date()
+    date = st.date_input("방문 날짜를 선택하세요", min_value=today)
+    date_str = date.strftime("%Y-%m-%d")
 
-        kst_now = datetime.utcnow() + timedelta(hours=9)
-        today = kst_now.date()
-        date = st.date_input("방문 날짜를 선택하세요", min_value=today)
-        date_str = date.strftime("%Y-%m-%d")
+    if date_str in full_dates:
+        st.warning("해당 날짜는 예약이 마감되었습니다.")
+    else:
+        tier = st.radio("슈퍼멤버스 등급", ["블랙", "레드", "옐로우"])
+        with st.form("reservation_form", clear_on_submit=False):
+            time_options = ["11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00"]
+            time = st.selectbox("방문 시간", time_options)
+            flavors = ["커피", "옥수수", "곶감", "흑임자", "딸기", "고구마"]
+            flavor_text = f"{st.selectbox('박스 1', flavors)}, {st.selectbox('박스 2', flavors)}" if tier in ["블랙", "레드"] else f"{st.selectbox('박스 1', flavors)}"
+            name = st.text_input("성함")
+            phone_input = st.text_input("연락처 (010-XXXX-XXXX)")
+            submit = st.form_submit_button("예약하기")
 
-        if date_str in full_dates:
-            st.warning("해당 날짜는 예약이 마감되었습니다.")
-        else:
-            tier = st.radio("슈퍼멤버스 등급", ["블랙", "레드", "옐로우"])
-            with st.form("reservation_form", clear_on_submit=False):
-                time_options = ["11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00"]
-                time = st.selectbox("방문 시간", time_options)
-                flavors = ["커피", "옥수수", "곶감", "흑임자", "딸기", "고구마"]
-                flavor_text = f"{st.selectbox('박스 1', flavors)}, {st.selectbox('박스 2', flavors)}" if tier in ["블랙", "레드"] else f"{st.selectbox('박스 1', flavors)}"
-                name = st.text_input("성함")
-                phone_input = st.text_input("연락처 (010-XXXX-XXXX)")
-                submit = st.form_submit_button("예약하기")
-
-            if submit:
-                formatted_phone = validate_and_format_phone(phone_input)
-                if not name or not formatted_phone:
-                    st.warning("⚠️ 연락처 확인 부탁드립니다.")
-                else:
-                    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    sheet.append_row([now, date_str, time, name, formatted_phone, tier, flavor_text])
-                    st.cache_data.clear()
-                    requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", 
-                                  data={"chat_id": CHAT_ID, "text": f"🔔 예약: {date_str} {time}\n등급: {tier}\n이름: {name}\n연락처: {formatted_phone}"})
-                    st.success(f"🎉 {name} 님, 예약이 완료되었습니다!")
-                    st.rerun()
-
-# --- 탭 2: 예약 취소하기 (기본 닫힘) ---
-with tab2:
-    with st.expander("예약 취소하기", expanded=False):
-        if 'cancel_phone_input' not in st.session_state:
-            st.session_state.cancel_phone_input = ""
-            
-        cancel_phone = st.text_input("취소할 전화번호 입력 (010-XXXX-XXXX)", value=st.session_state.cancel_phone_input)
-        st.session_state.cancel_phone_input = cancel_phone
-        
-        if st.button("예약 내역 조회"):
-            formatted_cancel_phone = validate_and_format_phone(cancel_phone)
-            if not formatted_cancel_phone:
-                st.error("올바른 번호 형식이 아닙니다.")
+        if submit:
+            formatted_phone = validate_and_format_phone(phone_input)
+            if not name or not formatted_phone:
+                st.warning("⚠️ 연락처 확인 부탁드립니다.")
             else:
-                cell = sheet.find(formatted_cancel_phone)
-                if cell:
-                    row_data = sheet.row_values(cell.row)
-                    st.session_state['cancel_info'] = {"row": cell.row, "data": row_data}
-                    st.info(f"확인된 예약: **{row_data[3]}** 님 (날짜: {row_data[1]} / 시간: {row_data[2]})")
-                else:
-                    st.error("해당 번호로 된 예약 기록을 찾을 수 없습니다.")
-
-        if 'cancel_info' in st.session_state:
-            if st.button("진짜 취소하기"):
-                sheet.delete_rows(st.session_state['cancel_info']['row'])
+                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                sheet.append_row([now, date_str, time, name, formatted_phone, tier, flavor_text])
                 st.cache_data.clear()
-                del st.session_state['cancel_info']
-                st.session_state.cancel_phone_input = ""
-                st.success("예약이 성공적으로 취소되었습니다.")
+                requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", 
+                              data={"chat_id": CHAT_ID, "text": f"🔔 예약: {date_str} {time}\n등급: {tier}\n이름: {name}\n연락처: {formatted_phone}"})
+                st.success(f"🎉 {name} 님, 예약이 완료되었습니다!")
                 st.rerun()
+
+# 3) 예약 취소 폴더
+with st.expander("❌ 예약 취소하기", expanded=False):
+    if 'cancel_phone_input' not in st.session_state:
+        st.session_state.cancel_phone_input = ""
+        
+    cancel_phone = st.text_input("취소할 전화번호 입력 (010-XXXX-XXXX)", value=st.session_state.cancel_phone_input)
+    st.session_state.cancel_phone_input = cancel_phone
+    
+    if st.button("예약 내역 조회"):
+        formatted_cancel_phone = validate_and_format_phone(cancel_phone)
+        if not formatted_cancel_phone:
+            st.error("올바른 번호 형식이 아닙니다.")
+        else:
+            cell = sheet.find(formatted_cancel_phone)
+            if cell:
+                row_data = sheet.row_values(cell.row)
+                st.session_state['cancel_info'] = {"row": cell.row, "data": row_data}
+                st.info(f"확인된 예약: **{row_data[3]}** 님 (날짜: {row_data[1]} / 시간: {row_data[2]})")
+            else:
+                st.error("해당 번호로 된 예약 기록을 찾을 수 없습니다.")
+
+    if 'cancel_info' in st.session_state:
+        if st.button("진짜 취소하기"):
+            sheet.delete_rows(st.session_state['cancel_info']['row'])
+            st.cache_data.clear()
+            del st.session_state['cancel_info']
+            st.session_state.cancel_phone_input = ""
+            st.success("예약이 성공적으로 취소되었습니다.")
+            st.rerun()
