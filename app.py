@@ -9,7 +9,7 @@ import json
 import os
 
 # ==========================================
-# 1. 환경 설정 (네 토큰 꼭 다시 넣어!)
+# 1. 환경 설정 (네 진짜 토큰 꼭 다시 넣어!)
 # ==========================================
 SHEET_NAME = '슈퍼멤버스' 
 TELEGRAM_TOKEN = '8683541983:AAHNo1XHon2bQGW-dM-QUJx6OwTCepPuGOs'
@@ -17,26 +17,30 @@ CHAT_ID = '8928088522'
 ADMIN_PASSWORD = '123' 
 
 # ==========================================
-# 2. 구글 시트 연동 (클라우드/로컬 자동 인식)
+# 2. 구글 시트 연동 (연결선과 데이터를 분리!)
 # ==========================================
-@st.cache_data(ttl=30)
-def load_data():
+# 📌 인터넷 연결선은 절대 끊어지지 않는 'cache_resource'에 보관
+@st.cache_resource
+def get_sheet():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    
-    # 내 컴퓨터에 파일이 있으면 파일을 읽고, 클라우드에서는 서버 금고를 읽음
     if os.path.exists('secrets.json'):
         creds = ServiceAccountCredentials.from_json_keyfile_name('secrets.json', scope)
     else:
         key_dict = json.loads(st.secrets["gcp_json"])
         creds = ServiceAccountCredentials.from_json_keyfile_dict(key_dict, scope)
-        
     client = gspread.authorize(creds)
-    sheet = client.open(SHEET_NAME).sheet1
-    return sheet.get_all_records(), sheet
+    return client.open(SHEET_NAME).sheet1
 
-records, sheet = load_data()
+sheet = get_sheet()
 
-# 📌 아까 실수로 지워졌던 날짜 계산 코드가 바로 여기야!
+# 📌 엑셀 글자 데이터는 30초마다 갱신되는 'cache_data'에 보관
+@st.cache_data(ttl=30)
+def get_records():
+    return get_sheet().get_all_records()
+
+records = get_records()
+
+# 마감 날짜 계산
 booked_dates = [str(row.get('방문 날짜', '')) for row in records if row.get('방문 날짜', '') != '']
 date_counts = Counter(booked_dates)
 full_dates = [date for date, count in date_counts.items() if count >= 3]
@@ -81,7 +85,7 @@ else:
             
         st.write("---")
         name = st.text_input("성함")
-        phone = st.text_input("연락처 (예: 01012345678)")
+        phone = st.text_input("연락처 (예: 010-1234-5678)")
         submit = st.form_submit_button("예약하기")
 
     if submit:
@@ -90,7 +94,7 @@ else:
         else:
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             sheet.append_row([now, date_str, time, name, phone, tier, flavor_text])
-            st.cache_data.clear() 
+            st.cache_data.clear() # 📌 예약 성공하면 예전 기억 싹 지우고 새로고침
             
             message = f"🔔 [체험단 예약]\n- 날짜: {date_str} {time}\n- 등급: {tier}\n- 맛: {flavor_text}\n- 이름: {name}\n- 연락처: {phone}"
             url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
