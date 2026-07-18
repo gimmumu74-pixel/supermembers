@@ -52,7 +52,6 @@ st.title("🏖️ 강릉샌드 슈퍼멤버스 예약")
 
 tab1, tab2 = st.tabs(["📅 예약하기", "❌ 예약 취소하기"])
 
-# --- 탭 1: 예약하기 ---
 with tab1:
     if full_dates:
         st.error(f"🚨 마감된 예약일: {', '.join(full_dates)}")
@@ -66,35 +65,33 @@ with tab1:
         st.warning("해당 날짜는 예약이 마감되었습니다.")
     else:
         tier = st.radio("슈퍼멤버스 등급", ["블랙", "레드", "옐로우"])
-        with st.form("reservation_form", clear_on_submit=True):
-            # 📌 30분 간격 시간대 (11:00 ~ 15:00)
-            time_options = [
-                "11:00", "11:30", "12:00", "12:30", 
-                "13:00", "13:30", "14:00", "14:30", "15:00"
-            ]
+        # 📌 clear_on_submit=False로 바꿔서 제출 실패해도 내용 유지
+        with st.form("reservation_form", clear_on_submit=False):
+            time_options = ["11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00"]
             time = st.selectbox("방문 시간", time_options)
             flavors = ["커피", "옥수수", "곶감", "흑임자", "딸기", "고구마"]
             flavor_text = f"{st.selectbox('박스 1', flavors)}, {st.selectbox('박스 2', flavors)}" if tier in ["블랙", "레드"] else f"{st.selectbox('박스 1', flavors)}"
             name = st.text_input("성함")
-            phone_input = st.text_input("연락처 (010-XXXX-XXXX)")
+            phone_input = st.text_input("연락처 (010으로 시작하는 11자리 숫자)")
             submit = st.form_submit_button("예약하기")
 
         if submit:
             formatted_phone = validate_and_format_phone(phone_input)
             if not name or not formatted_phone:
-                st.warning("⚠️ 성함과 연락처(010으로 시작하는 11자리)를 정확히 입력해 주세요.")
+                # 📌 워딩 부드럽게 수정
+                st.warning("⚠️ 연락처 확인 부탁드립니다. (010으로 시작하는 11자리 숫자를 입력해 주세요)")
             else:
                 now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 sheet.append_row([now, date_str, time, name, formatted_phone, tier, flavor_text])
                 st.cache_data.clear()
                 requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", 
                               data={"chat_id": CHAT_ID, "text": f"🔔 예약: {date_str} {time}\n등급: {tier}\n이름: {name}\n연락처: {formatted_phone}"})
-                st.success(f"🎉 예약 완료! ({formatted_phone})")
+                st.success(f"🎉 {name} 님, 예약이 완료되었습니다! ({formatted_phone})")
+                # 📌 성공했을 때만 화면 새로고침해서 폼 비우기
+                st.rerun()
 
-# --- 탭 2: 예약 취소하기 ---
 with tab2:
     st.subheader("예약 취소")
-    # 📌 입력값이 자동으로 지워지지 않도록 session_state 사용
     if 'cancel_phone_input' not in st.session_state:
         st.session_state.cancel_phone_input = ""
         
@@ -110,7 +107,7 @@ with tab2:
             if cell:
                 row_data = sheet.row_values(cell.row)
                 st.session_state['cancel_info'] = {"row": cell.row, "data": row_data}
-                st.info(f"확인된 예약: **{row_data[3]}** 님 | 날짜: {row_data[1]} | 등급: {row_data[5]}")
+                st.info(f"확인된 예약: **{row_data[3]}** 님 (날짜: {row_data[1]} / 시간: {row_data[2]})")
             else:
                 st.error("해당 번호로 된 예약 기록을 찾을 수 없습니다.")
 
@@ -119,6 +116,6 @@ with tab2:
             sheet.delete_rows(st.session_state['cancel_info']['row'])
             st.cache_data.clear()
             del st.session_state['cancel_info']
-            st.session_state.cancel_phone_input = "" # 취소 성공 시 번호 초기화
+            st.session_state.cancel_phone_input = ""
             st.success("예약이 성공적으로 취소되었습니다.")
-            st.rerun() # 화면 새로고침
+            st.rerun()
