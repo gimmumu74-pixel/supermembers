@@ -17,19 +17,25 @@ ADMIN_PASSWORD = '123' # 📌 관리자 비밀번호 (원하는 숫자로 바꿔
 # ==========================================
 # 2. 구글 시트 연동 (⚡ 속도 엄청 빨라지는 마법의 코드)
 # ==========================================
-@st.cache_data(ttl=30) # 30초 동안 엑셀 내용 기억 (로딩 딜레이 삭제)
+import json
+import os
+
+@st.cache_data(ttl=30)
 def load_data():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    creds = ServiceAccountCredentials.from_json_keyfile_name('secrets.json', scope)
+    
+    # 내 컴퓨터에 파일이 있으면 파일을 읽고, 클라우드에서는 서버 금고(st.secrets)를 읽음
+    if os.path.exists('secrets.json'):
+        creds = ServiceAccountCredentials.from_json_keyfile_name('secrets.json', scope)
+    else:
+        key_dict = json.loads(st.secrets["gcp_json"])
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(key_dict, scope)
+        
     client = gspread.authorize(creds)
     sheet = client.open(SHEET_NAME).sheet1
     return sheet.get_all_records(), sheet
 
 records, sheet = load_data()
-
-booked_dates = [str(row.get('방문 날짜', '')) for row in records if row.get('방문 날짜', '') != '']
-date_counts = Counter(booked_dates)
-full_dates = [date for date, count in date_counts.items() if count >= 3]
 
 # ==========================================
 # 3. 메인 화면 & 폼 숨기기 로직
