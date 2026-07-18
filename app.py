@@ -10,7 +10,7 @@ import os
 # ==========================================
 # 1. 설정
 # ==========================================
-ANNOUNCEMENT = "📢 [공지사항] 이곳에 공지사항을 입력하면 사이트 맨 위에 뜹니다."
+ANNOUNCEMENT = "📢 [공지사항] 예약을 취소하시려면 하단 '예약 취소하기'를 이용해 주세요."
 SHEET_NAME = '슈퍼멤버스' 
 TELEGRAM_TOKEN = '8683541983:AAHNo1XHon2bQGW-dM-QUJx6OwTCepPuGOs'
 CHAT_ID = '8928088522' 
@@ -44,13 +44,12 @@ date_counts = Counter(booked_dates)
 full_dates = [date for date, count in date_counts.items() if count >= 3]
 
 # ==========================================
-# 3. 메인 화면 (탭 구분)
+# 3. 메인 화면
 # ==========================================
 st.set_page_config(page_title="강릉샌드 체험단 예약", page_icon="🏖️")
 st.info(ANNOUNCEMENT)
 st.title("🏖️ 강릉샌드 슈퍼멤버스 예약")
 
-# 탭 나누기
 tab1, tab2 = st.tabs(["📅 예약하기", "❌ 예약 취소하기"])
 
 # --- 탭 1: 예약하기 ---
@@ -68,7 +67,12 @@ with tab1:
     else:
         tier = st.radio("슈퍼멤버스 등급", ["블랙", "레드", "옐로우"])
         with st.form("reservation_form", clear_on_submit=True):
-            time = st.selectbox("방문 시간", ["11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"])
+            # 📌 30분 간격 시간대 (11:00 ~ 15:00)
+            time_options = [
+                "11:00", "11:30", "12:00", "12:30", 
+                "13:00", "13:30", "14:00", "14:30", "15:00"
+            ]
+            time = st.selectbox("방문 시간", time_options)
             flavors = ["커피", "옥수수", "곶감", "흑임자", "딸기", "고구마"]
             flavor_text = f"{st.selectbox('박스 1', flavors)}, {st.selectbox('박스 2', flavors)}" if tier in ["블랙", "레드"] else f"{st.selectbox('박스 1', flavors)}"
             name = st.text_input("성함")
@@ -90,7 +94,12 @@ with tab1:
 # --- 탭 2: 예약 취소하기 ---
 with tab2:
     st.subheader("예약 취소")
-    cancel_phone = st.text_input("취소할 전화번호 입력 (010-XXXX-XXXX)")
+    # 📌 입력값이 자동으로 지워지지 않도록 session_state 사용
+    if 'cancel_phone_input' not in st.session_state:
+        st.session_state.cancel_phone_input = ""
+        
+    cancel_phone = st.text_input("취소할 전화번호 입력 (010-XXXX-XXXX)", value=st.session_state.cancel_phone_input)
+    st.session_state.cancel_phone_input = cancel_phone
     
     if st.button("예약 내역 조회"):
         formatted_cancel_phone = validate_and_format_phone(cancel_phone)
@@ -99,7 +108,6 @@ with tab2:
         else:
             cell = sheet.find(formatted_cancel_phone)
             if cell:
-                # [Timestamp, Date, Time, Name, Phone, Tier, Flavor] -> 3번 인덱스가 성함
                 row_data = sheet.row_values(cell.row)
                 st.session_state['cancel_info'] = {"row": cell.row, "data": row_data}
                 st.info(f"확인된 예약: **{row_data[3]}** 님 | 날짜: {row_data[1]} | 등급: {row_data[5]}")
@@ -111,4 +119,6 @@ with tab2:
             sheet.delete_rows(st.session_state['cancel_info']['row'])
             st.cache_data.clear()
             del st.session_state['cancel_info']
+            st.session_state.cancel_phone_input = "" # 취소 성공 시 번호 초기화
             st.success("예약이 성공적으로 취소되었습니다.")
+            st.rerun() # 화면 새로고침
