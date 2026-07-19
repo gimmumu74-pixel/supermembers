@@ -187,7 +187,7 @@ with st.expander("❌ 예약 취소하기", expanded=False):
     st.markdown("""
     **⚠️ 예약 취소 및 노쇼 안내**  
     예약 당일 급작스러운 취소나 사전 연락 없는 노쇼(No-Show) 발생 시, 
-    추후 체험단 진행에 불이익이 있을 수 있습니다. 
+    추후 [강릉샌드 본점] 체험단 진행에 불이익이 있을 수 있습니다. 
     일정 변경이나 취소가 필요하신 경우 반드시 미리 진행해 주세요!
     """)
     st.write("---")
@@ -212,7 +212,7 @@ with st.expander("❌ 예약 취소하기", expanded=False):
                 st.error("해당 번호로 된 예약 기록을 찾을 수 없습니다.")
 
     if 'cancel_info' in st.session_state:
-        if st.button("진짜 취소하기"):
+        if st.button("예약 취소하기"):
             # 1. 삭제하기 전에 취소할 사람 정보 미리 저장
             row_data = st.session_state['cancel_info']['data']
             c_name = row_data[3]
