@@ -55,7 +55,6 @@ booked_dates = [str(row.get('방문 날짜', '')) for row in records if row.get(
 date_counts = Counter(booked_dates)
 full_dates = [date for date, count in date_counts.items() if count >= 3]
 
-# 📌 예약된 연락처 목록 추출 (중복 예약 방지용)
 existing_phones = [str(row.get('연락처', '')) for row in records if row.get('연락처', '') != '']
 
 # ==========================================
@@ -153,11 +152,25 @@ with st.expander("📅 예약하기", expanded=False):
     """)
     st.write("---")
 
-    # 📌 마감된 예약일 가독성 개선 (정렬 및 줄바꿈 적용)
+    # 📌 마감된 예약일 가독성 개선 (연도별 그룹화 및 세로 정렬)
     if full_dates:
         sorted_full_dates = sorted(full_dates)
-        dates_list_str = "\n".join([f"• {d}" for d in sorted_full_dates])
-        st.error(f"🚨 **마감된 예약일**\n{dates_list_str}")
+        grouped_dates = {}
+        for d in sorted_full_dates:
+            year, month, day = d.split('-')
+            if year not in grouped_dates:
+                grouped_dates[year] = []
+            # '07'월 '19'일을 '7월 19일' 형태로 변환해서 저장
+            grouped_dates[year].append(f"{int(month)}월 {int(day)}일")
+        
+        # Markdown 문법에 맞게 줄바꿈(\n\n) 처리
+        msg = "🚨 **마감된 예약일**"
+        for year, dates in grouped_dates.items():
+            msg += f"\n\n**[{year}년]**\n"
+            for md in dates:
+                msg += f"* {md}\n"
+                
+        st.error(msg)
 
     kst_now = datetime.utcnow() + timedelta(hours=9)
     today = kst_now.date()
@@ -188,7 +201,7 @@ with st.expander("📅 예약하기", expanded=False):
             formatted_phone = validate_and_format_phone(phone_input)
             if not name or not formatted_phone:
                 st.warning("⚠️ 연락처 확인 부탁드립니다.")
-            elif formatted_phone in existing_phones:  # 📌 중복 예약 방지 로직
+            elif formatted_phone in existing_phones:
                 st.error("⚠️ 이미 예약된 내역이 있는 연락처입니다. 1인당 1회만 예약 가능합니다.")
             else:
                 now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
