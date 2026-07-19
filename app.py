@@ -18,7 +18,7 @@ ANNOUNCEMENT = """
     </div>
     <ul style="color: #3E2723; margin-bottom: 0; padding-left: 20px; line-height: 1.6;">
         <li style="margin-bottom: 6px;">하루 최대 <strong>3팀</strong>까지만 예약을 받습니다!</li>
-        <li>슈퍼멤버스 체험단은 <strong>[강릉샌드 본점]</strong>만 가능합니다!</li>
+        <li>슈퍼멤버스 체험단은 <br><strong>[강릉샌드 본점]</strong>만 가능합니다!</li>
     </ul>
 </div>
 """
