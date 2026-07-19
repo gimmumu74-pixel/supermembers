@@ -1,3 +1,16 @@
+캡처 화면 보니까 진짜 답답했겠다. 기존에 쓰던 기능(st.info)이 그냥 글씨를 왼쪽부터 다닥다닥 붙여버리는 기본 상자라서 네가 원하는 예쁜 정렬이 안 된 거야.
+
+가독성 확 끌어올리기 위해서, 아예 웹디자인할 때 쓰는 HTML 코드를 써서 공지사항 전용 상자를 새로 만들었어.
+
+가운데 정렬: 제목(📢 [필독] 공지사항)을 정중앙에 똭 박았어.
+
+리스트 정렬: 아래 내용들은 점(불렛) 찍어서 깔끔하게 리스트로 떨어지게 만들었어.
+
+색상: 우리가 설정해둔 베이커리 톤(크림색 배경, 초코 브라운 글씨)에 딱 맞게 맞춤 제작했어.
+
+app.py 코드를 이걸로 다시 전체 복사해서 덮어씌워 봐!
+
+Python
 import streamlit as st
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -10,9 +23,18 @@ import os
 # ==========================================
 # 1. 설정
 # ==========================================
-# 📌 따옴표 3개로 묶어서 여러 줄이 에러 없이 들어가게 수정함
-ANNOUNCEMENT = """📢 [필독] 하루 최대 **3팀**까지만 예약을 받습니다!
-📢 [필독] 슈퍼멤버스 체험단은 '강릉샌드 본점'만 가능합니다!"""
+# 📌 HTML을 사용해서 완벽하게 디자인된 공지사항 상자 만들기
+ANNOUNCEMENT = """
+<div style="background-color: #F3EFE6; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #d7ccc8;">
+    <div style="text-align: center; font-weight: bold; font-size: 1.1em; color: #3E2723; margin-bottom: 12px;">
+        📢 [필독] 공지사항
+    </div>
+    <ul style="color: #3E2723; margin-bottom: 0; padding-left: 20px; line-height: 1.6;">
+        <li style="margin-bottom: 6px;">하루 최대 <strong>3팀</strong>까지만 예약을 받습니다!</li>
+        <li>슈퍼멤버스 체험단은 <strong>[강릉샌드 본점]</strong>만 가능합니다!</li>
+    </ul>
+</div>
+"""
 
 SHEET_NAME = '슈퍼멤버스' 
 TELEGRAM_TOKEN = '8683541983:AAHNo1XHon2bQGW-dM-QUJx6OwTCepPuGOs'
@@ -60,8 +82,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.info(ANNOUNCEMENT)
-st.title("[강릉샌드 본점] 슈퍼멤버스 예약")
+# 📌 기존 st.info 대신 우리가 만든 커스텀 HTML 상자를 렌더링하도록 변경
+st.markdown(ANNOUNCEMENT, unsafe_allow_html=True)
+st.title("🏖️ 강릉샌드 슈퍼멤버스 예약")
 
 # 📌 예약 완료 시 화면 전환 로직
 if 'booking_success' in st.session_state and st.session_state.booking_success:
