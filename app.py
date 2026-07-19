@@ -24,7 +24,6 @@ ANNOUNCEMENT = """
 
 SHEET_NAME = '슈퍼멤버스' 
 
-# 📌 텔레그램 토큰을 안전하게 st.secrets에서 불러오기
 TELEGRAM_TOKEN = st.secrets["TELEGRAM_TOKEN"]
 CHAT_ID = st.secrets["CHAT_ID"] 
 
@@ -61,16 +60,17 @@ full_dates = [date for date, count in date_counts.items() if count >= 3]
 # ==========================================
 st.set_page_config(page_title="강릉샌드 체험단 예약", page_icon="🏖️")
 
+# 📌 CSS 수정: 헤더(깃허브 아이콘), 푸터(워터마크) 완벽하게 가리기
 st.markdown("""
     <style>
-    /* 폰 화면 단어 단위 줄바꿈 유지 */
     .stMarkdown, .stAlert, h1, h2, h3, p, span, li {
         word-break: keep-all !important;
     }
-    /* 📌 우측 상단 메뉴 및 하단 워터마크 완전 숨기기 */
-    #MainMenu {visibility: hidden;}
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
+    /* 우측 상단 깃허브 프로필 및 Fork 버튼이 있는 헤더 강제 숨기기 */
+    [data-testid="stHeader"] {display: none !important;}
+    /* 하단 워터마크 강제 숨기기 */
+    footer {display: none !important;}
+    .viewerBadge_container {display: none !important;}
     </style>
 """, unsafe_allow_html=True)
 
@@ -78,7 +78,7 @@ st.markdown(ANNOUNCEMENT, unsafe_allow_html=True)
 st.markdown("<h1 style='text-align: center;'>[강릉샌드 본점] 슈퍼멤버스 예약</h1>", unsafe_allow_html=True)
 
 # ==========================================
-# 📌 변수 발생 시 화면 전환 로직 (예약 완료 / 예약 취소 완료)
+# 📌 변수 발생 시 화면 전환 로직
 # ==========================================
 if 'booking_success' in st.session_state and st.session_state.booking_success:
     st.balloons() 
@@ -153,14 +153,6 @@ with st.expander("📅 예약하기", expanded=False):
     """)
     st.write("---")
 
-    # 📌 법적 방어를 위한 개인정보 수집 동의 문구 추가 (디자인 고려해서 살짝 작게)
-    st.markdown("""
-    <div style="font-size: 0.85em; color: #666; margin-bottom: 10px;">
-    ※ 예약 버튼 클릭 시, <br>
-    예약 진행 및 노쇼 방지를 위한 개인정보(성함, 연락처) 수집·이용에 동의한 것으로 간주합니다.
-    </div>
-    """, unsafe_allow_html=True)
-
     if full_dates:
         st.error(f"🚨 마감된 예약일: {', '.join(full_dates)}")
 
@@ -180,6 +172,14 @@ with st.expander("📅 예약하기", expanded=False):
             flavor_text = f"{st.selectbox('박스 1', flavors)}, {st.selectbox('박스 2', flavors)}" if tier in ["블랙", "레드"] else f"{st.selectbox('박스 1', flavors)}"
             name = st.text_input("성함")
             phone_input = st.text_input("연락처 (010-XXXX-XXXX)")
+            
+            # 📌 개인정보 수집 동의 문구를 '예약하기' 버튼 바로 위로 이동
+            st.markdown("""
+            <div style="font-size: 0.8em; color: #666; margin: 15px 0 10px 0; text-align: center;">
+            ※ 예약 버튼 클릭 시, 예약 진행 및 노쇼 방지를 위한<br>개인정보(성함, 연락처) 수집·이용에 동의한 것으로 간주합니다.
+            </div>
+            """, unsafe_allow_html=True)
+            
             submit = st.form_submit_button("예약하기")
 
         if submit:
