@@ -1,3 +1,12 @@
+아, 3번에서 메시지가 안 뜨고 그냥 넘어가 버렸구나!
+
+이유는 코드 맨 마지막에 st.success(...)로 메시지를 띄우자마자 바로 아래에 st.rerun()을 써서 그래. 메시지가 화면에 0.001초 동안 잠깐 나타났다가, 페이지가 통째로 처음부터 다시 그려지면서 지워져 버린 거지. 손님 입장에서는 진짜 취소가 된 건지 구분이 안 돼서 답답했을 거야.
+
+이것도 네이버 예약처럼 취소를 누르면 "취소가 완료되었습니다"라는 완전 새로운 화면(페이지)으로 싹 전환되게 고쳤어! 취소된 내역 요약이랑 매장 알림이 전송되었다는 문구를 명확하게 보여주고, [처음으로 돌아가기] 버튼을 누를 수 있게 만들었으니까 손님들이 훨씬 안심할 거야.
+
+app.py 전체 코드를 아래 내용으로 다시 싹 덮어씌워 줘!
+
+Python
 import streamlit as st
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -10,7 +19,6 @@ import os
 # ==========================================
 # 1. 설정
 # ==========================================
-# 📌 HTML을 사용해서 완벽하게 디자인된 공지사항 상자 만들기
 ANNOUNCEMENT = """
 <div style="background-color: #F3EFE6; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #d7ccc8;">
     <div style="text-align: center; font-weight: bold; font-size: 1.1em; color: #3E2723; margin-bottom: 12px;">
@@ -69,33 +77,43 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.markdown(ANNOUNCEMENT, unsafe_allow_html=True)
-
-# 📌 가운데 정렬이 적용된 HTML 제목
 st.markdown("<h1 style='text-align: center;'>[강릉샌드 본점] 슈퍼멤버스 예약</h1>", unsafe_allow_html=True)
 
 # ==========================================
-# 📌 예약 완료 시 화면 전환 로직
+# 📌 변수 발생 시 화면 전환 로직 (예약 완료 / 예약 취소 완료)
 # ==========================================
+# 1) 예약 완료 화면
 if 'booking_success' in st.session_state and st.session_state.booking_success:
     st.balloons() 
     st.success(f"🎉 **{st.session_state.success_name}** 님, 예약이 정상적으로 완료되었습니다!")
-    
     st.markdown(f"""
     ### 📅 예약 확정 상세 내역
     *   **방문 날짜 :** {st.session_state.success_date}
     *   **방문 시간 :** {st.session_state.success_time}
     *   **선택 등급 :** {st.session_state.success_tier}
     *   **선택 구성 :** {st.session_state.success_flavor}
-    
     ---
-    
     📍 **매장 방문 시 안내**  
     카운터에서 직원에게 **[슈퍼멤버스]**라고 말씀해 주시면 빠른 안내 도와드릴게요!  
     조심히 오세요! 매장에서 뵙겠습니다. 😊
     """)
-    
-    if st.button("🏠 처음으로 돌아가기"):
+    if st.button("🏠 처음으로 돌아가기", key="btn_b_home"):
         del st.session_state.booking_success
+        st.rerun()
+    st.stop()
+
+# 2) 📌 예약 취소 완료 화면 (새로 추가된 화면 전환)
+if 'cancel_success' in st.session_state and st.session_state.cancel_success:
+    st.warning("❌ 예약 취소가 정상적으로 완료되었습니다.")
+    st.markdown(f"""
+    ### 🗑️ 취소된 예약 내역
+    *   **예약자 성함 :** {st.session_state.c_success_name} 님
+    *   **취소된 일정 :** {st.session_state.c_success_date} ({st.session_state.c_success_time})
+    ---
+    매장 측 운영 시트에서 내역이 정상적으로 삭제되었으며, 사장님 텔레그램으로도 취소 알림이 실시간 전송되었습니다. 다음에 더 좋은 기회로 만나 뵙기를 기대하겠습니다. 감사합니다! 🏖️
+    """)
+    if st.button("🏠 처음으로 돌아가기", key="btn_c_home"):
+        del st.session_state.cancel_success
         st.rerun()
     st.stop()
 
@@ -180,14 +198,13 @@ with st.expander("📅 예약하기", expanded=False):
                 st.rerun()
 
 # ==========================================
-# 3) 예약 취소 폴더 (📌 취소 알림 로직 추가)
+# 3) 예약 취소 폴더
 # ==========================================
 with st.expander("❌ 예약 취소하기", expanded=False):
-    # 📌 노쇼 및 당일 취소 경고 문구 추가
     st.markdown("""
     **⚠️ 예약 취소 및 노쇼 안내**  
     예약 당일 급작스러운 취소나 사전 연락 없는 노쇼(No-Show) 발생 시, 
-    추후 [강릉샌드 본점] 체험단 진행에 불이익이 있을 수 있습니다. 
+    추후 체험단 진행에 불이익이 있을 수 있습니다. 
     일정 변경이나 취소가 필요하신 경우 반드시 미리 진행해 주세요!
     """)
     st.write("---")
@@ -212,8 +229,7 @@ with st.expander("❌ 예약 취소하기", expanded=False):
                 st.error("해당 번호로 된 예약 기록을 찾을 수 없습니다.")
 
     if 'cancel_info' in st.session_state:
-        if st.button("예약 취소하기"):
-            # 1. 삭제하기 전에 취소할 사람 정보 미리 저장
+        if st.button("진짜 취소하기"):
             row_data = st.session_state['cancel_info']['data']
             c_name = row_data[3]
             c_date = row_data[1]
@@ -221,17 +237,19 @@ with st.expander("❌ 예약 취소하기", expanded=False):
             c_phone = row_data[4]
             c_tier = row_data[5]
 
-            # 2. 구글 시트에서 행 삭제
             sheet.delete_rows(st.session_state['cancel_info']['row'])
             st.cache_data.clear()
             
-            # 📌 3. 텔레그램으로 취소 알림 발송
             cancel_msg = f"🚨 [취소 알림] 예약이 취소되었습니다!\n이름: {c_name}\n날짜: {c_date}\n시간: {c_time}\n등급: {c_tier}\n연락처: {c_phone}"
             requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", 
                           data={"chat_id": CHAT_ID, "text": cancel_msg})
             
-            # 4. 마무리 및 성공 메시지 출력
+            # 📌 취소 데이터를 세션에 저장하고 새로고침하여 취소 완료 화면 유도
+            st.session_state.cancel_success = True
+            st.session_state.c_success_name = c_name
+            st.session_state.c_success_date = c_date
+            st.session_state.c_success_time = c_time
+            
             del st.session_state['cancel_info']
             st.session_state.cancel_phone_input = ""
-            st.success(f"{c_name} 님의 예약이 정상적으로 취소되었습니다. 매장에도 알림이 전송되었습니다.")
             st.rerun()
