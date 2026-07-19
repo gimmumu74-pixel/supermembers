@@ -1,4 +1,4 @@
-import streamlit as st  # 📌 여기에 as를 넣어서 오타 수정 완료!
+import streamlit as st
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import requests
@@ -44,15 +44,25 @@ date_counts = Counter(booked_dates)
 full_dates = [date for date, count in date_counts.items() if count >= 3]
 
 # ==========================================
-# 3. 메인 화면
+# 3. 메인 화면 및 스타일 설정
 # ==========================================
 st.set_page_config(page_title="강릉샌드 체험단 예약", page_icon="🏖️")
+
+# 📌 폰 화면에서 글자가 중간에 끊기지 않도록 단어 단위 줄바꿈(CSS) 주입
+st.markdown("""
+    <style>
+    .stMarkdown, .stAlert, h1, h2, h3, p, span, li {
+        word-break: keep-all !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 st.info(ANNOUNCEMENT)
 st.title("🏖️ 강릉샌드 슈퍼멤버스 예약")
 
-# 📌 네이버 예약 스타일: 예약 완료 시 완전 새로운 화면 전환 로직
+# 📌 예약 완료 시 화면 전환 로직
 if 'booking_success' in st.session_state and st.session_state.booking_success:
-    st.balloons() # 축하 풍선 효과
+    st.balloons() 
     st.success(f"🎉 **{st.session_state.success_name}** 님, 예약이 정상적으로 완료되었습니다!")
     
     st.markdown(f"""
@@ -64,7 +74,7 @@ if 'booking_success' in st.session_state and st.session_state.booking_success:
     
     ---
     
-    📍 **매장 방문 시 안내**
+    📍 **매장 방문 시 안내**  
     카운터에서 직원에게 **[슈퍼멤버스]**라고 말씀해 주시면 빠른 안내 도와드릴게요!  
     조심히 오세요! 매장에서 뵙겠습니다. 😊
     """)
@@ -72,7 +82,7 @@ if 'booking_success' in st.session_state and st.session_state.booking_success:
     if st.button("🏠 처음으로 돌아가기"):
         del st.session_state.booking_success
         st.rerun()
-    st.stop() # 아래 3단 폴더 코드가 안 그려지게 막아서 완전한 화면 전환 효과를 줌
+    st.stop()
 
 # 1) 매장 안내 폴더
 with st.expander("ℹ️ [공식] 매장 안내 및 주의사항", expanded=False):
@@ -137,7 +147,6 @@ with st.expander("📅 예약하기", expanded=False):
                 requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", 
                               data={"chat_id": CHAT_ID, "text": f"🔔 예약: {date_str} {time}\n등급: {tier}\n이름: {name}\n연락처: {formatted_phone}"})
                 
-                # 📌 데이터를 세션 상태에 저장하고 새로고침하여 완료 페이지 유도
                 st.session_state.booking_success = True
                 st.session_state.success_name = name
                 st.session_state.success_date = date_str
