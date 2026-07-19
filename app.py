@@ -100,7 +100,7 @@ if 'booking_success' in st.session_state and st.session_state.booking_success:
 # 1) 매장 안내 폴더
 with st.expander("ℹ️ [공식] 매장 안내 및 주의사항", expanded=False):
     st.markdown("""
-    ### 🏖️ [강릉샌드 본점] 체험단 방문 안내
+    ### [강릉샌드 본점] 체험단 방문 안내
 
     안녕하세요! 
     
@@ -111,7 +111,7 @@ with st.expander("ℹ️ [공식] 매장 안내 및 주의사항", expanded=Fals
     **⚠️ 포스팅 전 꼭 확인해 주세요 (오리뷰 방지)**
     현재 네이버나 구글에 '강릉샌드 본점'을 검색하면 유사업체가 함께 노출되어 혼선이 많습니다.
     
-    쿠키 겉면에 "강릉샌드" 글자가 각인된 것이 저희 매장의 진짜 시그니처입니다!
+    쿠키 앞면에 "강릉샌드" 글자가 각인된 것이 저희 매장의 진짜 시그니처입니다!
 
     번거로우시겠지만, 아래의 공식 주소를 꼭 확인하여 리뷰 등록 부탁드립니다!
 
@@ -148,7 +148,7 @@ with st.expander("📅 예약하기", expanded=False):
         with st.form("reservation_form", clear_on_submit=False):
             time_options = ["11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00"]
             time = st.selectbox("방문 시간", time_options)
-            flavors = ["커피", "옥수수", "곶감", "흑임자", "딸기", "고구마"]
+            flavors = ["커피", "초당옥수수", "곶감", "흑임자", "딸기", "고구마"]
             flavor_text = f"{st.selectbox('박스 1', flavors)}, {st.selectbox('박스 2', flavors)}" if tier in ["블랙", "레드"] else f"{st.selectbox('박스 1', flavors)}"
             name = st.text_input("성함")
             phone_input = st.text_input("연락처 (010-XXXX-XXXX)")
