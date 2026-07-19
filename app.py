@@ -61,7 +61,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.info(ANNOUNCEMENT)
-st.title("🏖️ 강릉샌드 슈퍼멤버스 예약")
+st.title("[강릉샌드 본점] 슈퍼멤버스 예약")
 
 # 📌 예약 완료 시 화면 전환 로직
 if 'booking_success' in st.session_state and st.session_state.booking_success:
