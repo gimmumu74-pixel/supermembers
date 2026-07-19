@@ -7,6 +7,10 @@ from collections import Counter
 import json
 import os
 
+# 절대 코드에 직접 적지 말고 secrets에서 불러오기!
+TELEGRAM_TOKEN = st.secrets["TELEGRAM_TOKEN"]
+CHAT_ID = st.secrets["CHAT_ID"]
+
 # ==========================================
 # 1. 설정
 # ==========================================
