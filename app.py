@@ -60,7 +60,6 @@ full_dates = [date for date, count in date_counts.items() if count >= 3]
 # ==========================================
 st.set_page_config(page_title="강릉샌드 체험단 예약", page_icon="🏖️")
 
-# 📌 폰 화면에서 글자가 중간에 끊기지 않도록 단어 단위 줄바꿈(CSS) 주입
 st.markdown("""
     <style>
     .stMarkdown, .stAlert, h1, h2, h3, p, span, li {
@@ -69,12 +68,14 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 📌 기존 st.info 대신 우리가 만든 커스텀 HTML 상자를 렌더링하도록 변경
 st.markdown(ANNOUNCEMENT, unsafe_allow_html=True)
-# 📌 가운데 정렬이 적용된 HTML 제목으로 변경
+
+# 📌 가운데 정렬이 적용된 HTML 제목
 st.markdown("<h1 style='text-align: center;'>[강릉샌드 본점] 슈퍼멤버스 예약</h1>", unsafe_allow_html=True)
 
+# ==========================================
 # 📌 예약 완료 시 화면 전환 로직
+# ==========================================
 if 'booking_success' in st.session_state and st.session_state.booking_success:
     st.balloons() 
     st.success(f"🎉 **{st.session_state.success_name}** 님, 예약이 정상적으로 완료되었습니다!")
@@ -98,10 +99,12 @@ if 'booking_success' in st.session_state and st.session_state.booking_success:
         st.rerun()
     st.stop()
 
+# ==========================================
 # 1) 매장 안내 폴더
+# ==========================================
 with st.expander("ℹ️ [공식] 매장 안내 및 주의사항", expanded=False):
     st.markdown("""
-    ### [강릉샌드 본점] 체험단 방문 안내
+    ### 🏖️ [강릉샌드 본점] 체험단 방문 안내
 
     안녕하세요! 
     
@@ -112,7 +115,7 @@ with st.expander("ℹ️ [공식] 매장 안내 및 주의사항", expanded=Fals
     **⚠️ 포스팅 전 꼭 확인해 주세요 (오리뷰 방지)**
     현재 네이버나 구글에 '강릉샌드 본점'을 검색하면 유사업체가 함께 노출되어 혼선이 많습니다.
     
-    쿠키 앞면에 "강릉샌드" 글자가 각인된 것이 저희 매장의 진짜 시그니처입니다!
+    쿠키 겉면에 "강릉샌드" 글자가 각인된 것이 저희 매장의 진짜 시그니처입니다!
 
     번거로우시겠지만, 아래의 공식 주소를 꼭 확인하여 리뷰 등록 부탁드립니다!
 
@@ -123,7 +126,9 @@ with st.expander("ℹ️ [공식] 매장 안내 및 주의사항", expanded=Fals
     - 강릉샌드 쿠키랩 : 강릉시 남구길30번길 23
     """)
 
+# ==========================================
 # 2) 예약하기 폴더
+# ==========================================
 with st.expander("📅 예약하기", expanded=False):
     st.markdown("""
     #### 📌 슈퍼멤버스 등급별 혜택
@@ -149,7 +154,7 @@ with st.expander("📅 예약하기", expanded=False):
         with st.form("reservation_form", clear_on_submit=False):
             time_options = ["11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00"]
             time = st.selectbox("방문 시간", time_options)
-            flavors = ["커피", "초당옥수수", "곶감", "흑임자", "딸기", "고구마"]
+            flavors = ["커피", "옥수수", "곶감", "흑임자", "딸기", "고구마"]
             flavor_text = f"{st.selectbox('박스 1', flavors)}, {st.selectbox('박스 2', flavors)}" if tier in ["블랙", "레드"] else f"{st.selectbox('박스 1', flavors)}"
             name = st.text_input("성함")
             phone_input = st.text_input("연락처 (010-XXXX-XXXX)")
@@ -174,8 +179,19 @@ with st.expander("📅 예약하기", expanded=False):
                 st.session_state.success_flavor = flavor_text
                 st.rerun()
 
-# 3) 예약 취소 폴더
+# ==========================================
+# 3) 예약 취소 폴더 (📌 취소 알림 로직 추가)
+# ==========================================
 with st.expander("❌ 예약 취소하기", expanded=False):
+    # 📌 노쇼 및 당일 취소 경고 문구 추가
+    st.markdown("""
+    **⚠️ 예약 취소 및 노쇼 안내**  
+    예약 당일 급작스러운 취소나 사전 연락 없는 노쇼(No-Show) 발생 시, 
+    추후 체험단 진행에 불이익이 있을 수 있습니다. 
+    일정 변경이나 취소가 필요하신 경우 반드시 미리 진행해 주세요!
+    """)
+    st.write("---")
+
     if 'cancel_phone_input' not in st.session_state:
         st.session_state.cancel_phone_input = ""
         
@@ -197,9 +213,25 @@ with st.expander("❌ 예약 취소하기", expanded=False):
 
     if 'cancel_info' in st.session_state:
         if st.button("진짜 취소하기"):
+            # 1. 삭제하기 전에 취소할 사람 정보 미리 저장
+            row_data = st.session_state['cancel_info']['data']
+            c_name = row_data[3]
+            c_date = row_data[1]
+            c_time = row_data[2]
+            c_phone = row_data[4]
+            c_tier = row_data[5]
+
+            # 2. 구글 시트에서 행 삭제
             sheet.delete_rows(st.session_state['cancel_info']['row'])
             st.cache_data.clear()
+            
+            # 📌 3. 텔레그램으로 취소 알림 발송
+            cancel_msg = f"🚨 [취소 알림] 예약이 취소되었습니다!\n이름: {c_name}\n날짜: {c_date}\n시간: {c_time}\n등급: {c_tier}\n연락처: {c_phone}"
+            requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", 
+                          data={"chat_id": CHAT_ID, "text": cancel_msg})
+            
+            # 4. 마무리 및 성공 메시지 출력
             del st.session_state['cancel_info']
             st.session_state.cancel_phone_input = ""
-            st.success("예약이 성공적으로 취소되었습니다.")
+            st.success(f"{c_name} 님의 예약이 정상적으로 취소되었습니다. 매장에도 알림이 전송되었습니다.")
             st.rerun()
