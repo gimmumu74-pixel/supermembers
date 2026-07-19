@@ -1,12 +1,3 @@
-아, 3번에서 메시지가 안 뜨고 그냥 넘어가 버렸구나!
-
-이유는 코드 맨 마지막에 st.success(...)로 메시지를 띄우자마자 바로 아래에 st.rerun()을 써서 그래. 메시지가 화면에 0.001초 동안 잠깐 나타났다가, 페이지가 통째로 처음부터 다시 그려지면서 지워져 버린 거지. 손님 입장에서는 진짜 취소가 된 건지 구분이 안 돼서 답답했을 거야.
-
-이것도 네이버 예약처럼 취소를 누르면 "취소가 완료되었습니다"라는 완전 새로운 화면(페이지)으로 싹 전환되게 고쳤어! 취소된 내역 요약이랑 매장 알림이 전송되었다는 문구를 명확하게 보여주고, [처음으로 돌아가기] 버튼을 누를 수 있게 만들었으니까 손님들이 훨씬 안심할 거야.
-
-app.py 전체 코드를 아래 내용으로 다시 싹 덮어씌워 줘!
-
-Python
 import streamlit as st
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -204,7 +195,7 @@ with st.expander("❌ 예약 취소하기", expanded=False):
     st.markdown("""
     **⚠️ 예약 취소 및 노쇼 안내**  
     예약 당일 급작스러운 취소나 사전 연락 없는 노쇼(No-Show) 발생 시, 
-    추후 체험단 진행에 불이익이 있을 수 있습니다. 
+    추후 [강릉샌드 본점] 체험단 진행에 불이익이 있을 수 있습니다. 
     일정 변경이나 취소가 필요하신 경우 반드시 미리 진행해 주세요!
     """)
     st.write("---")
@@ -229,7 +220,7 @@ with st.expander("❌ 예약 취소하기", expanded=False):
                 st.error("해당 번호로 된 예약 기록을 찾을 수 없습니다.")
 
     if 'cancel_info' in st.session_state:
-        if st.button("진짜 취소하기"):
+        if st.button("예약 취소"):
             row_data = st.session_state['cancel_info']['data']
             c_name = row_data[3]
             c_date = row_data[1]
