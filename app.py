@@ -55,20 +55,20 @@ booked_dates = [str(row.get('방문 날짜', '')) for row in records if row.get(
 date_counts = Counter(booked_dates)
 full_dates = [date for date, count in date_counts.items() if count >= 3]
 
+# 📌 예약된 연락처 목록 추출 (중복 예약 방지용)
+existing_phones = [str(row.get('연락처', '')) for row in records if row.get('연락처', '') != '']
+
 # ==========================================
 # 3. 메인 화면 및 스타일 설정
 # ==========================================
 st.set_page_config(page_title="강릉샌드 체험단 예약", page_icon="🏖️")
 
-# 📌 CSS 수정: 헤더(깃허브 아이콘), 푸터(워터마크) 완벽하게 가리기
 st.markdown("""
     <style>
     .stMarkdown, .stAlert, h1, h2, h3, p, span, li {
         word-break: keep-all !important;
     }
-    /* 우측 상단 깃허브 프로필 및 Fork 버튼이 있는 헤더 강제 숨기기 */
     [data-testid="stHeader"] {display: none !important;}
-    /* 하단 워터마크 강제 숨기기 */
     footer {display: none !important;}
     .viewerBadge_container {display: none !important;}
     </style>
@@ -153,8 +153,11 @@ with st.expander("📅 예약하기", expanded=False):
     """)
     st.write("---")
 
+    # 📌 마감된 예약일 가독성 개선 (정렬 및 줄바꿈 적용)
     if full_dates:
-        st.error(f"🚨 마감된 예약일: {', '.join(full_dates)}")
+        sorted_full_dates = sorted(full_dates)
+        dates_list_str = "\n".join([f"• {d}" for d in sorted_full_dates])
+        st.error(f"🚨 **마감된 예약일**\n{dates_list_str}")
 
     kst_now = datetime.utcnow() + timedelta(hours=9)
     today = kst_now.date()
@@ -173,7 +176,6 @@ with st.expander("📅 예약하기", expanded=False):
             name = st.text_input("성함")
             phone_input = st.text_input("연락처 (010-XXXX-XXXX)")
             
-            # 📌 개인정보 수집 동의 문구를 '예약하기' 버튼 바로 위로 이동
             st.markdown("""
             <div style="font-size: 0.8em; color: #666; margin: 15px 0 10px 0; text-align: center;">
             ※ 예약 버튼 클릭 시, 예약 진행 및 노쇼 방지를 위한<br>개인정보(성함, 연락처) 수집·이용에 동의한 것으로 간주합니다.
@@ -186,6 +188,8 @@ with st.expander("📅 예약하기", expanded=False):
             formatted_phone = validate_and_format_phone(phone_input)
             if not name or not formatted_phone:
                 st.warning("⚠️ 연락처 확인 부탁드립니다.")
+            elif formatted_phone in existing_phones:  # 📌 중복 예약 방지 로직
+                st.error("⚠️ 이미 예약된 내역이 있는 연락처입니다. 1인당 1회만 예약 가능합니다.")
             else:
                 now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 sheet.append_row([now, date_str, time, name, formatted_phone, tier, flavor_text])
