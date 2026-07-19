@@ -71,7 +71,8 @@ st.markdown("""
 
 # 📌 기존 st.info 대신 우리가 만든 커스텀 HTML 상자를 렌더링하도록 변경
 st.markdown(ANNOUNCEMENT, unsafe_allow_html=True)
-st.title("[강릉샌드 본점] 슈퍼멤버스 예약")
+# 📌 가운데 정렬이 적용된 HTML 제목으로 변경
+st.markdown("<h1 style='text-align: center;'>[강릉샌드 본점] 슈퍼멤버스 예약</h1>", unsafe_allow_html=True)
 
 # 📌 예약 완료 시 화면 전환 로직
 if 'booking_success' in st.session_state and st.session_state.booking_success:
