@@ -101,7 +101,7 @@ if 'cancel_success' in st.session_state and st.session_state.cancel_success:
     *   **예약자 성함 :** {st.session_state.c_success_name} 님
     *   **취소된 일정 :** {st.session_state.c_success_date} ({st.session_state.c_success_time})
     ---
-    매장 측 운영 시트에서 내역이 정상적으로 삭제되었으며, 사장님 텔레그램으로도 취소 알림이 실시간 전송되었습니다. 다음에 더 좋은 기회로 만나 뵙기를 기대하겠습니다. 감사합니다! 🏖️
+    다음에 더 좋은 기회로 만나 뵙기를 기대하겠습니다! 감사합니다! 🏖️
     """)
     if st.button("🏠 처음으로 돌아가기", key="btn_c_home"):
         del st.session_state.cancel_success
