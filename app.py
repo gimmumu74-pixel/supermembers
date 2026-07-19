@@ -1,4 +1,4 @@
-import streamlit st
+import streamlit as st  # 📌 여기에 as를 넣어서 오타 수정 완료!
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import requests
