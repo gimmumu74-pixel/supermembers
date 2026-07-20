@@ -39,7 +39,7 @@ else:
     today_bookings.sort(key=lambda x: str(x.get('방문 시간', ''))) # 시간순 정렬
     msg = f"🌅 [{today_str}] 오늘의 슈퍼멤버스 체험단\n총 {len(today_bookings)}팀 방문 예정입니다.\n\n"
     for idx, b in enumerate(today_bookings, 1):
-        msg += f"{idx}. {b.get('방문 시간')} - {b.get('성함')} 님\n   (등급: {b.get('슈퍼멤버스 등급', b.get('등급', ''))} / 맛: {b.get('선택한 ', '')})\n\n"
+        msg += f"{idx}. {b.get('방문 시간')} - {b.get('성함')} 님\n   (등급: {b.get('슈퍼멤버스 등급', b.get('등급', ''))} / 맛: {b.get('선택한 맛', '')})\n\n"
     msg += "오늘 하루도 화이팅! 💪"
 
 send_telegram(msg)
