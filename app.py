@@ -207,8 +207,8 @@ with st.expander("📅 예약하기", expanded=False):
                 now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 sheet.append_row([now, date_str, time, name, formatted_phone, tier, flavor_text])
                 st.cache_data.clear()
-                requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", 
-                              data={"chat_id": CHAT_ID, "text": f"🔔 예약: {date_str} {time}\n등급: {tier}\n이름: {name}\n연락처: {formatted_phone}"})
+                requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
+                              data={"chat_id": CHAT_ID, "text": f"🔔 예약: {date_str} {time}\n등급: {tier}\n이름: {name}\n맛: {flavor_text}"})
                 
                 st.session_state.booking_success = True
                 st.session_state.success_name = name
@@ -261,7 +261,7 @@ with st.expander("❌ 예약 취소하기", expanded=False):
             sheet.delete_rows(st.session_state['cancel_info']['row'])
             st.cache_data.clear()
             
-            cancel_msg = f"🚨 [취소 알림] 예약이 취소되었습니다!\n이름: {c_name}\n날짜: {c_date}\n시간: {c_time}\n등급: {c_tier}\n연락처: {c_phone}"
+            cancel_msg = f"🚨 [취소 알림] 예약이 취소되었습니다!\n이름: {c_name}\n날짜: {c_date}\n시간: {c_time}\n등급: {c_tier}"
             requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", 
                           data={"chat_id": CHAT_ID, "text": cancel_msg})
             
