@@ -34,12 +34,12 @@ today_bookings = [row for row in records if str(row.get('방문 날짜', '')) ==
 
 # 4. 텔레그램 메시지 조립 및 발송
 if not today_bookings:
-    msg = f"🌅 [{today_str}] 오늘의 gangneung 샌드 체험단\n\n오늘은 예약된 방문 일정이 없습니다! 🏖️"
+    msg = f"🌅 [{today_str}] 오늘의 슈퍼멤버스 체험단\n\n오늘은 예약된 방문 일정이 없습니다! 🏖️"
 else:
     today_bookings.sort(key=lambda x: str(x.get('방문 시간', ''))) # 시간순 정렬
-    msg = f"🌅 [{today_str}] 오늘의 gangneung 샌드 체험단\n총 {len(today_bookings)}팀 방문 예정입니다.\n\n"
+    msg = f"🌅 [{today_str}] 오늘의 슈퍼멤버스 체험단\n총 {len(today_bookings)}팀 방문 예정입니다.\n\n"
     for idx, b in enumerate(today_bookings, 1):
-        msg += f"{idx}. {b.get('방문 시간')} - {b.get('성함')} 님\n   (등급: {b.get('슈퍼멤버스 등급', b.get('등급', ''))} / 맛: {b.get('박스 1', b.get('구성', ''))})\n\n"
+        msg += f"{idx}. {b.get('방문 시간')} - {b.get('성함')} 님\n   (등급: {b.get('슈퍼멤버스 등급', b.get('등급', ''))} / 맛: {b.get('선택한 ', '')})\n\n"
     msg += "오늘 하루도 화이팅! 💪"
 
 send_telegram(msg)
