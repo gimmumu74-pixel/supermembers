@@ -1,0 +1,29 @@
+name: Daily Morning Briefing
+
+on:
+  schedule:
+    # 0 0 * * * = UTC 기준 자정 (한국 시간 아침 9시)
+    - cron: '0 0 * * *'
+  workflow_dispatch: # 수동 테스트 버튼
+
+jobs:
+  send_briefing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 코드 가져오기
+        uses: actions/checkout@v3
+
+      - name: 파이썬 설치
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: 라이브러리 설치
+        run: pip install gspread oauth2client requests pytz
+
+      - name: 브리핑 봇 실행
+        env:
+          GCP_JSON: ${{ secrets.GCP_JSON }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: python daily_briefing.py
