@@ -3,7 +3,7 @@ name: Daily Morning Briefing
 on:
   schedule:
     # 0 0 * * * = UTC 기준 자정 (한국 시간 아침 9시)
-    - cron: '0 0 * * *'
+    - cron: '47 23 * * *'
   workflow_dispatch: # 수동 테스트 버튼
 
 jobs:
