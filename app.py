@@ -184,10 +184,10 @@ with st.expander("📅 예약하기", expanded=False):
                     
         st.error(msg)
 
-   date = st.date_input("방문 날짜를 선택하세요", min_value=today)
+
+    date = st.date_input("방문 날짜를 선택하세요", min_value=today)
     date_str = date.strftime("%Y-%m-%d")
 
-    # 👇 여기서 순서를 바꿨어! 8월인지를 가장 먼저 검사하게 올려버림.
     if date.month == 8:
         st.error("🚨 8월 체험단 예약은 모두 마감되었습니다.")
     elif date_str in full_dates:
@@ -198,6 +198,7 @@ with st.expander("📅 예약하기", expanded=False):
             time_options = ["11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00"]
             time = st.selectbox("방문 시간", time_options)
             flavors = ["커피", "옥수수", "곶감", "흑임자", "딸기", "고구마"]
+            
             flavor_text = f"{st.selectbox('박스 1', flavors)}, {st.selectbox('박스 2', flavors)}" if tier in ["블랙", "레드"] else f"{st.selectbox('박스 1', flavors)}"
             name = st.text_input("성함")
             phone_input = st.text_input("연락처 (010-XXXX-XXXX)")
