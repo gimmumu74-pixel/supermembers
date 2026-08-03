@@ -152,15 +152,22 @@ with st.expander("📅 예약하기", expanded=False):
     """)
     st.write("---")
 
-    # 👇 오늘 날짜 구하는 코드를 위로 올림 (과거 날짜 필터링을 위해)
     kst_now = datetime.utcnow() + timedelta(hours=9)
     today = kst_now.date()
 
-    # 📌 마감된 예약일 가독성 개선 (과거 날짜 제외 및 안내 문구 추가)
+    # 📌 마감된 예약일 가독성 개선 (8월 날짜 숨김 및 안내 문구 수정)
     if full_dates:
-        # 1. 지나간 날짜 제외 (오늘 날짜보다 크거나 같은 날짜만 남김)
-        future_full_dates = [d for d in full_dates if datetime.strptime(d, "%Y-%m-%d").date() >= today]
+        # 1. 지나간 날짜 제외 & 8월 날짜 제외 (8월은 전체 마감 안내로 퉁침)
+        future_full_dates = [
+            d for d in full_dates 
+            if datetime.strptime(d, "%Y-%m-%d").date() >= today 
+            and datetime.strptime(d, "%Y-%m-%d").month != 8
+        ]
         
+        # 2. 문구 간소화 ('9월 일정부터~' 삭제)
+        msg = "🚨 **마감된 예약일**\n\n📢 **8월 체험단 예약은 모두 마감되었습니다.**"
+        
+        # 3. 9월 이후에 마감된 날짜가 있다면 리스트 렌더링
         if future_full_dates:
             sorted_full_dates = sorted(future_full_dates)
             grouped_dates = {}
@@ -170,23 +177,21 @@ with st.expander("📅 예약하기", expanded=False):
                     grouped_dates[year] = []
                 grouped_dates[year].append(f"{int(month)}월 {int(day)}일")
             
-            # 2. 추가 요청한 멘트 삽입
-            msg = "🚨 **마감된 예약일**\n\n📢 **8월 체험단 예약은 모두 마감되었습니다. 9월 일정부터 선택해 주세요.**"
-            
             for year, dates in grouped_dates.items():
                 msg += f"\n\n**[{year}년]**\n"
                 for md in dates:
                     msg += f"* {md}\n"
                     
-            st.error(msg)
+        st.error(msg)
 
-    date = st.date_input("방문 날짜를 선택하세요", min_value=today)
+   date = st.date_input("방문 날짜를 선택하세요", min_value=today)
     date_str = date.strftime("%Y-%m-%d")
 
-    if date_str in full_dates:
+    # 👇 여기서 순서를 바꿨어! 8월인지를 가장 먼저 검사하게 올려버림.
+    if date.month == 8:
+        st.error("🚨 8월 체험단 예약은 모두 마감되었습니다.")
+    elif date_str in full_dates:
         st.warning("해당 날짜는 예약이 마감되었습니다.")
-    elif date.month == 8:
-        st.error("🚨 8월 체험단 예약은 모두 마감되었습니다. 9월 일정부터 선택해 주세요.")
     else:
         tier = st.radio("슈퍼멤버스 등급", ["블랙", "레드", "옐로우"])
         with st.form("reservation_form", clear_on_submit=False):
@@ -204,6 +209,7 @@ with st.expander("📅 예약하기", expanded=False):
             """, unsafe_allow_html=True)
             
             submit = st.form_submit_button("예약하기")
+
         if submit:
             formatted_phone = validate_and_format_phone(phone_input)
             if not name or not formatted_phone:
@@ -224,7 +230,6 @@ with st.expander("📅 예약하기", expanded=False):
                 st.session_state.success_tier = tier
                 st.session_state.success_flavor = flavor_text
                 st.rerun()
-
 # ==========================================
 # 3) 예약 취소 폴더
 # ==========================================
