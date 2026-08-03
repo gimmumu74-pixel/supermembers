@@ -177,8 +177,11 @@ with st.expander("📅 예약하기", expanded=False):
     date = st.date_input("방문 날짜를 선택하세요", min_value=today)
     date_str = date.strftime("%Y-%m-%d")
 
+    # 👇 여기서부터 수정!
     if date_str in full_dates:
         st.warning("해당 날짜는 예약이 마감되었습니다.")
+    elif date.month == 8:  # 👈 추가된 부분: 선택한 날짜가 8월이면
+        st.error("🚨 8월 체험단 예약은 모두 마감되었습니다. 9월 일정부터 선택해 주세요.") # 👈 폼 대신 경고창 띄우기
     else:
         tier = st.radio("슈퍼멤버스 등급", ["블랙", "레드", "옐로우"])
         with st.form("reservation_form", clear_on_submit=False):
