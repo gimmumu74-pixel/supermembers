@@ -55,8 +55,6 @@ booked_dates = [str(row.get('방문 날짜', '')) for row in records if row.get(
 date_counts = Counter(booked_dates)
 full_dates = [date for date, count in date_counts.items() if count >= 3]
 
-existing_phones = [str(row.get('연락처', '')) for row in records if row.get('연락처', '') != '']
-
 # ==========================================
 # 3. 메인 화면 및 스타일 설정
 # ==========================================
@@ -155,19 +153,15 @@ with st.expander("📅 예약하기", expanded=False):
     kst_now = datetime.utcnow() + timedelta(hours=9)
     today = kst_now.date()
 
-    # 📌 마감된 예약일 가독성 개선 (8월 날짜 숨김 및 안내 문구 수정)
+    # 📌 마감된 예약일 가독성 개선 (8월 관련 내용 싹 제거)
     if full_dates:
-        # 1. 지나간 날짜 제외 & 8월 날짜 제외 (8월은 전체 마감 안내로 퉁침)
         future_full_dates = [
             d for d in full_dates 
             if datetime.strptime(d, "%Y-%m-%d").date() >= today 
-            and datetime.strptime(d, "%Y-%m-%d").month != 8
         ]
         
-        # 2. 문구 간소화 ('9월 일정부터~' 삭제)
-        msg = "🚨 **마감된 예약일**\n\n📢 **8월 체험단 예약은 모두 마감되었습니다.**"
+        msg = "🚨 **마감된 예약일**"
         
-        # 3. 9월 이후에 마감된 날짜가 있다면 리스트 렌더링
         if future_full_dates:
             sorted_full_dates = sorted(future_full_dates)
             grouped_dates = {}
@@ -182,22 +176,22 @@ with st.expander("📅 예약하기", expanded=False):
                 for md in dates:
                     msg += f"* {md}\n"
                     
-        st.error(msg)
-
+            st.error(msg)
 
     date = st.date_input("방문 날짜를 선택하세요", min_value=today)
     date_str = date.strftime("%Y-%m-%d")
 
-    if date.month == 8:
-        st.error("🚨 8월 체험단 예약은 모두 마감되었습니다.")
-    elif date_str in full_dates:
+    # 8월 예약 차단 삭제, 순수하게 마감된 날짜만 확인
+    if date_str in full_dates:
         st.warning("해당 날짜는 예약이 마감되었습니다.")
     else:
         tier = st.radio("슈퍼멤버스 등급", ["블랙", "레드", "옐로우"])
         with st.form("reservation_form", clear_on_submit=False):
             time_options = ["11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00"]
             time = st.selectbox("방문 시간", time_options)
-            flavors = ["커피", "옥수수", "곶감", "흑임자", "딸기", "고구마"]
+            
+            # 고구마 맛 삭제
+            flavors = ["커피", "옥수수", "곶감", "흑임자", "딸기"]
             
             flavor_text = f"{st.selectbox('박스 1', flavors)}, {st.selectbox('박스 2', flavors)}" if tier in ["블랙", "레드"] else f"{st.selectbox('박스 1', flavors)}"
             name = st.text_input("성함")
@@ -215,22 +209,39 @@ with st.expander("📅 예약하기", expanded=False):
             formatted_phone = validate_and_format_phone(phone_input)
             if not name or not formatted_phone:
                 st.warning("⚠️ 연락처 확인 부탁드립니다.")
-            elif formatted_phone in existing_phones:
-                st.error("⚠️ 이미 예약된 내역이 있는 연락처입니다. 1인당 1회만 예약 가능합니다.")
             else:
-                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                sheet.append_row([now, date_str, time, name, formatted_phone, tier, flavor_text])
-                st.cache_data.clear()
-                requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
-                              data={"chat_id": CHAT_ID, "text": f"🔔 예약: {date_str} {time}\n등급: {tier}\n이름: {name}\n맛: {flavor_text}"})
+                # 📌 30일 간격 중복 예약 방지 로직
+                is_duplicate = False
+                for row in records:
+                    if str(row.get('연락처', '')) == formatted_phone:
+                        prev_date_str = str(row.get('방문 날짜', ''))
+                        if prev_date_str:
+                            try:
+                                prev_date = datetime.strptime(prev_date_str, "%Y-%m-%d").date()
+                                # 기존 날짜와 신청 날짜 간격이 30일 이내이면 예약 불가 (abs 함수 사용)
+                                if abs((date - prev_date).days) < 30:
+                                    is_duplicate = True
+                                    break
+                            except ValueError:
+                                pass
                 
-                st.session_state.booking_success = True
-                st.session_state.success_name = name
-                st.session_state.success_date = date_str
-                st.session_state.success_time = time
-                st.session_state.success_tier = tier
-                st.session_state.success_flavor = flavor_text
-                st.rerun()
+                if is_duplicate:
+                    st.error("⚠️ 최근 방문일(또는 예약일) 기준 30일 이내에는 중복 예약이 불가능합니다.")
+                else:
+                    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    sheet.append_row([now, date_str, time, name, formatted_phone, tier, flavor_text])
+                    st.cache_data.clear()
+                    requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
+                                  data={"chat_id": CHAT_ID, "text": f"🔔 예약: {date_str} {time}\n등급: {tier}\n이름: {name}\n맛: {flavor_text}"})
+                    
+                    st.session_state.booking_success = True
+                    st.session_state.success_name = name
+                    st.session_state.success_date = date_str
+                    st.session_state.success_time = time
+                    st.session_state.success_tier = tier
+                    st.session_state.success_flavor = flavor_text
+                    st.rerun()
+
 # ==========================================
 # 3) 예약 취소 폴더
 # ==========================================
