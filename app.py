@@ -190,8 +190,8 @@ with st.expander("📅 예약하기", expanded=False):
             time_options = ["11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00"]
             time = st.selectbox("방문 시간", time_options)
             
-            # 고구마 맛 삭제
-            flavors = ["커피", "옥수수", "곶감", "흑임자", "딸기"]
+            # 고구마 맛 복구
+            flavors = ["커피", "옥수수", "곶감", "흑임자", "딸기", "고구마"]
             
             flavor_text = f"{st.selectbox('박스 1', flavors)}, {st.selectbox('박스 2', flavors)}" if tier in ["블랙", "레드"] else f"{st.selectbox('박스 1', flavors)}"
             name = st.text_input("성함")
